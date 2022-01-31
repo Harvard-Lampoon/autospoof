@@ -1,0 +1,17 @@
+#+title: Lampy Autospoof
+
+For SSR and static sites (which together make like 90% of the web).
+
+* Setup
+#+begin_src shell
+$ git clone https://github.com/Harvard-Lampoon/autospoof.git
+$ cd autospoof
+$ yarn install
+#+end_src
+* Usage
+#+begin_src shell
+$ ./autospoof.ts <siteconfig.yaml> <client_secret.json> <docs> <output>
+#+end_src
+* Limitations
+- Can only handle up to 1000 parody articles (as if lit would ever write more than that)
+- Sites
