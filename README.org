@@ -14,4 +14,3 @@ $ ./autospoof.ts <siteconfig.yaml> <client_secret.json> <docs> <output>
 #+end_src
 * Limitations
 - Can only handle up to 1000 parody articles (as if lit would ever write more than that)
-- Sites
