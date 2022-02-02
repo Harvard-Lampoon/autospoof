@@ -7,7 +7,8 @@
     "repository": "https://github.com/Harvard-Lampoon/autospoof.git",
     "license": "UNLICENSED",
     "scripts": {
-	"start": "tsc && node autospoof.js"
+        "build": "tsc",
+        "start": "node autospoof.js"
     },
     "dependencies": {
         "cheerio": "^1.0.0-rc.10",
@@ -21,7 +22,6 @@
     "devDependencies": {
         "@types/inquirer": "^8.2.0",
         "@types/node": "^17.0.13",
-        "@types/yaml": "^1.9.7",
         "typescript": "^4.5.5"
     }
 }

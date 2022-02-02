@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node-transpile-only
+#!/usr/bin/env node
 import fs from "fs";
 import { Stream } from "stream";
 import path from "path";

@@ -6,11 +6,12 @@ For SSR and static sites (which together make like 90% of the web).
 #+begin_src shell
 $ git clone https://github.com/Harvard-Lampoon/autospoof.git
 $ cd autospoof
-$ yarn install
+$ npx yarn install
+$ npx yarn build
 #+end_src
 * Usage
 #+begin_src shell
-$ ./autospoof.ts <siteconfig.yaml> <client_secret.json> <docs> <output>
+$ ./autospoof.js <siteconfig.yaml> <client_secret.json> <docs> <output>
 #+end_src
 * Limitations
 - Can only handle up to 1000 parody articles (as if lit would ever write more than that)
