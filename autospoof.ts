@@ -1,9 +1,6 @@
 #!/usr/bin/env ts-node-transpile-only
 import fs from "fs";
-import {
-    default as stream,
-    Stream
-} from "stream";
+import { Stream } from "stream";
 import path from "path";
 import {
     default as cheerio,
@@ -186,15 +183,7 @@ const save = async (folder: string, basename: string, url?: string | null): Prom
     });
     if (res.status === 200) {
         const filename = basename +  + "." + res.headers["content-type"].split("/")[1]; // Poor man's MIME type to extension conversion.
-        const writeStream = fs.createWriteStream(path.join(folder, filename));
-        res.data.pipe(writeStream);
-        await new Promise<void>((resolve, reject) => stream.finished(writeStream, (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve();
-        }));
+        res.data.pipe(fs.createWriteStream(path.join(folder, filename)));
         return filename;
     } else {
         console.error(`Received status ${res.status} while trying to access ${url}`);
