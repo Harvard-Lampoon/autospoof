@@ -1,5 +1,28 @@
 frontpage:
-    url: https://www.thecrimson.com/
+  url: https://www.thecrimson.com/
+  articles:
+    .img-top, .img-left, .img-right, .img-undefined:
+      title: h1 > a
+      href:  h1 > a
+      image: .preview-image:first-of-type
+      subtitle: .preview-content > p
+      author: .contributor-container a
+      .most-read-title:
+        remove: ".advertisement, .spinner, .large-only, .css-1b9vs98, #primary > div.thin-column, #primary > div.wide"
+  css:
+    body:
+      margin-top: -24px
+    .wide-column:
+      max-width: 100%
 article:
-    url: https://www.thecrimson.com/article/2022/1/31/harvard-t-station-emergency/
+  url: https://www.thecrimson.com/article/2022/1/31/harvard-t-station-emergency/
+  remove: .css-1b9vs98, .css-8pot, .spinner
+  title: h1
+  image: .css-8atqhb
+  body: .css-ujgn17
+  links:
+    .white-box-children a:
+      .css-yu0l7n-Qs:
+        title: p
+        image: img
 default: https://www.harvardlampoon.com/comp

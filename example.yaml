@@ -1,0 +1,18 @@
+frontpage:
+    url: https://example.com
+    remove: #ad1, #ad2, .ad-class
+    script: |
+        document.getElementById("id");
+    articles:
+        a.article-headline:
+        a.article-headline2: h1.actual-text
+        div.article-headline2:
+            title:
+article:
+    url: https://example.com/article/1970/01/01/it-s-the-epoch.html
+    remove: #ad1, #ad2, .ad-class
+    script: |
+        document.getElementById("id");
+    links:
+        a.external-article-link:
+	a.external-article-link2: h3.actual-text
