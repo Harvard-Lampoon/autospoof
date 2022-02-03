@@ -11,7 +11,7 @@ $ npx yarn build
 #+end_src
 * Usage
 #+begin_src shell
-$ ./autospoof.js <siteconfig.yaml> <client_secret.json> <docs> <output>
+$ node autospoof.js <siteconfig.yaml> <client_secret.json> <docs> <output>
 #+end_src
 * Limitations
 - Can only handle up to 1000 parody articles (as if lit would ever write more than that)

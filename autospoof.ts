@@ -30,8 +30,9 @@ const SCOPES = [
 interface Page {
     url: string;
     remove?: string;
+    frontpage?: string;
     script?: string;
-    css?: Record<string, Record<string, string>>;
+    style?: string;
 }
 
 interface Article {
@@ -74,6 +75,7 @@ interface Configuration {
     };
     default?: string;
     authors?: string[];
+    suffix?: string;
 }
 
 interface SavedCredentials {
@@ -106,53 +108,67 @@ const mkdir = (dir: string) => fs.existsSync(dir) || fs.mkdirSync(dir);
 
 const safeName = (str: string): string => str.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
+let authorIndex: number = 0;
+const assignedAuthors: Record<string, string[]> = {};
+const getAuthor = (authors: string[] | undefined, article: FullArticle, authorNumber: number): string => {
+    (article.title in assignedAuthors) || (assignedAuthors[article.title] = []);
+    return assignedAuthors[article.title][authorNumber] = assignedAuthors[article.title][authorNumber]
+	?? authors?.[authorIndex++ % (authors?.length ?? 1)]
+	?? "Crimzoid";
+}
+
 const getPage = async (page: Page): Promise<CheerioAPI> => {
     const $ = cheerio.load(unwrap(await request({
         url: page.url,
         responseType: "text"
     })));
     $("script").remove();
-    $(page.remove).remove();
-    for (let [ selector, css ] of Object.entries(page.css ?? {})) {
-        $(selector).css(css);
-    }
-    page.script && $("body").append($("<script>${page.script}</script>"));
+    page.remove && $(page.remove).remove();
+    page.script && $("body").append($(`<script>${page.script}</script>`));
+    page.style && $("head").append($(`<style>${page.style}</style>`));
     return $;
 };
 
-const processArticles = ($: CheerioAPI, config: Record<string, Article>, articles: FullArticle[], articlesFolder: string, imagesFolder: string): CheerioAPI => {
+const processArticles = ($: CheerioAPI,
+			 config: Record<string, Article>,
+			 articles: FullArticle[],
+			 authors: string[] | undefined,
+			 articlesFolder: string,
+			 imagesFolder: string): CheerioAPI => {
     let i: number = 0;
     for (let [ selector, article ] of Object.entries(config)) {
-        if (i < articles.length) {
-            $(selector).each((i: number, element) => {
-                let title = $(element);
-                if (article.title) {
-                    title = title.find(article.title);
-                }
-                title.text(articles[i].title);
-                let href = $(element);
-                if (article.href) {
-                    href = href.find(article.href);
-                }
-                href.attr("href", articlesFolder + "/" + safeName(articles[i].title) + ".html");
-                if (article.image) {
-                    const image = $(element).find(article.image);
-                    if (articles[i].image) {
-                        image.replaceWith(`<img src="${imagesFolder}/${articles[i].image}" />`);
-                    } else {
-                        image.remove();
-                    }
-                }
-                if (article.subtitle) {
-                    $(element).find(article.subtitle).text(articles[i].subtitle ?? "");
-                }
-                i++;
-                return i < articles.length;
-            });
-        }
-        if (i >= articles.length) {
-            $(selector).remove();
-        }
+	i < articles.length && $(selector).each((i: number, element) => {
+            let title = $(element);
+            if (article.title) {
+		title = title.find(article.title);
+            }
+            title.text(articles[i].title);
+            let href = $(element);
+            if (article.href) {
+		href = href.find(article.href);
+            }
+            href.attr("href", articlesFolder + "/" + safeName(articles[i].title) + ".html");
+            if (article.image) {
+		const image = $(element).find(article.image);
+		if (articles[i].image) {
+                    image.replaceWith(`<img src="${imagesFolder}/${articles[i].image}" />`);
+		} else {
+                    image.remove();
+		}
+            }
+            if (article.subtitle) {
+		$(element).find(article.subtitle).text(articles[i].subtitle ?? "");
+            }
+	    if (article.author) {
+		$(element).find(article.author).each((j: number, element) => {
+		    $(element).text(getAuthor(authors, articles[i], j));
+		    return true;
+		});
+	    }
+            i++;
+            return i < articles.length;
+	});
+	i < articles.length || $(selector).remove();
     }
     return $;
 };
@@ -182,7 +198,7 @@ const save = async (folder: string, basename: string, url?: string | null): Prom
         responseType: "stream"
     });
     if (res.status === 200) {
-        const filename = basename +  + "." + res.headers["content-type"].split("/")[1]; // Poor man's MIME type to extension conversion.
+        const filename = basename + "." + res.headers["content-type"].split("/")[1]; // Poor man's MIME type to extension conversion.
         res.data.pipe(fs.createWriteStream(path.join(folder, filename)));
         return filename;
     } else {
@@ -213,71 +229,87 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
         q: `'${folder}' in parents and mimeType = 'application/vnd.google-apps.document'`,
         fields: "files(id, name)"
     })).files;
-    for (let { id, name } of files ?? []) {
-        console.log(`Processing "${name}"...`);
-        if (!id || !name) {
-            continue;
-        }
+    files && await Promise.all(files.map(async ({ id, name }): Promise<void> => {
+	console.log(`Processing "${name}"...`);
+	if (!id || !name) {
+	    return;
+	}
         const document = unwrap(await docs.documents.get({
-            documentId: id
+	    documentId: id
         }));
         let body = "";
         for (let { paragraph } of document?.body?.content ?? []) {
-            if (!paragraph?.elements) {
+	    if (!paragraph?.elements) {
                 continue;
-            }
-            for (let { textRun } of paragraph?.elements) {
+	    }
+	    for (let { textRun } of paragraph?.elements) {
                 const text = textRun?.content;
-                if (!text || text.trim().toUpperCase() == name) {
-                    continue;
+                if (!text || text.trim().toUpperCase() == name.toUpperCase()) {
+		    continue;
                 }
                 body += text;
-            }
+	    }
         }
+	body = body.trim();
         articles.push({
-            title: name,
-            subtitle: body.split("\n")[0],
-            body: body.trim(),
-            image: await save(path.join(output, "images"), safeName(name),
-                              Object.values(document.inlineObjects ?? {})[0]?.inlineObjectProperties?.embeddedObject?.imageProperties?.contentUri
+	    title: name,
+	    subtitle: body.split("\n")[0],
+	    body: body,
+	    image: await save(path.join(output, "images"), safeName(name),
+			      Object.values(document.inlineObjects ?? {})[0]?.inlineObjectProperties?.embeddedObject?.imageProperties?.contentUri
                 || Object.values(document.positionedObjects ?? {})[0]?.positionedObjectProperties?.embeddedObject?.imageProperties?.contentUri)
         });
-        // await sleep(1000);
-    }
+    }));
     articles.sort((a: FullArticle, b: FullArticle): number => Number(Boolean(b.image)) - Number(Boolean(a.image)));
     articles = (await prompt([{
         type: "order-list",
         message: "Order parody articles by priority, most important first: ",
         name: "priority",
         choices: articles.map((article: FullArticle) => ({
-            name: (article.image ? "🖼️" : "") + article.title,
+            name: article.title,
             value: article
         }))
     }])).priority;
     const frontpage = await getPage(config.frontpage);
-    if (config.default) {
-        frontpage("a").attr("href", config.default);
-    }
-    fs.writeFileSync(path.join(output, "index.html"), processArticles(frontpage, normalize(config.frontpage.articles), articles, "./articles", "./images").html());
+    config.default && frontpage("a").attr("href", config.default);
+    config.frontpage.frontpage && frontpage(config.frontpage.frontpage).attr("href", "#");
+    fs.writeFileSync(path.join(output, "index.html"),
+		     processArticles(frontpage,
+				     normalize(config.frontpage.articles),
+				     articles,
+				     config.authors,
+				     "./articles",
+				     "./images").html());
     let articlePage = await getPage(config.article);
-    if (config.default) {
-        articlePage("a").attr("href", config.default);
-    }
-    articlePage = processArticles(articlePage, normalize(config.article.links), articles, "./", "../images");
+    config.default && articlePage("a").attr("href", config.default);
+    config.article.frontpage && articlePage(config.article.frontpage).attr("href", "../");
+    articlePage = processArticles(articlePage,
+				  normalize(config.article.links),
+				  articles,
+				  config.authors,
+				  "./",
+				  "../images");
     for (let article of articles) {
-        articlePage(config.article.title).text(article.title);
-        articlePage(config.article.body).text(article.body);
-        if (config.article.subtitle) {
-            articlePage(config.article.subtitle).text(article.subtitle ?? "");
-        }
-        if (config.article.image) {
-            if (article.image) {
-                articlePage(config.article.image).replaceWith(`<img src="../images/${article.image}" />`);
-            } else {
-                articlePage(config.article.image).remove();
-            }
-        }
-        fs.writeFileSync(path.join(output, "articles", safeName(article.title) + ".html"), articlePage.html());
+	articlePage(config.article.title).text(article.title);
+	articlePage(config.article.body).text(article.body);
+	if (config.article.subtitle) {
+	    articlePage(config.article.subtitle).text(article.subtitle ?? "");
+	}
+	if (config.article.image) {
+	    if (article.image) {
+		articlePage(config.article.image).replaceWith(`<img src="../images/${article.image}" />`);
+	    } else {
+		articlePage(config.article.image).remove();
+	    }
+	}
+	if (config.article.author) {
+	    articlePage(config.article.author).each((j: number, element) => {
+		articlePage(element).text(getAuthor(config.authors, article, j));
+		return true;
+	    });
+	}
+	articlePage("title").text(article.title + (config.suffix ?? ""));
+	fs.writeFileSync(path.join(output, "articles", safeName(article.title) + ".html"), articlePage.html());
     }
 };
 if (require.main === module) {

@@ -1,5 +1,6 @@
 frontpage:
   url: https://www.thecrimson.com/
+  frontpage:
   articles:
     .img-top, .img-left, .img-right, .img-undefined:
       title: h1 > a
@@ -7,15 +8,19 @@ frontpage:
       image: .preview-image:first-of-type
       subtitle: .preview-content > p
       author: .contributor-container a
-      .most-read-title:
-        remove: ".advertisement, .spinner, .large-only, .css-1b9vs98, #primary > div.thin-column, #primary > div.wide"
-  css:
-    body:
-      margin-top: -24px
-    .wide-column:
-      max-width: 100%
+    .most-read-title:
+  remove: ".advertisement, .spinner, div.large-only, .css-1b9vs98, #primary > div.thin-column, #primary > div.wide"
+  style: |
+    body {
+      margin-top: -24px !important;
+    }
+
+    .wide-column {
+      max-width: 100% !important;
+    }
 article:
   url: https://www.thecrimson.com/article/2022/1/31/harvard-t-station-emergency/
+  frontpage:
   remove: .css-1b9vs98, .css-8pot, .spinner
   title: h1
   image: .css-8atqhb
@@ -25,4 +30,35 @@ article:
       .css-yu0l7n-Qs:
         title: p
         image: img
+suffix: " | News | Harvard Crimson"
+authors:
+  - Johnny the Kid
+  - David Racecar
+  - Chet Hanks
+  - Anatoly Anal
+  - The entire Crimson staff, shaking our heads
+  - Chuck Fuckle
+  - Hog Cranker
+  - Mike Onomatopoeia
+  - Nelkrimson
+  - Alien Man
+  - Buck Fuckle
+  - Cutie Patootie
+  - Bob Joe Smith-Hennson
+  - Lard Mouth
+  - Felicks Deemer
+  - Barge Marge
+  - "Ball? Where??!!?!"
+  - Jiggly Cuomo
+  - "Neil DeGrass Tyson: Better Than Science?"
+  - Coach’s Friend
+  - Magellan
+  - Cooper Trooper
+  - David Clark
+  - Bink
+  - Prance Kranston
+  - Rick Schtick
+  - Ma’ Damn Hog
+  - Rick Schtick
+  - Nadia Bizness
 default: https://www.harvardlampoon.com/comp
