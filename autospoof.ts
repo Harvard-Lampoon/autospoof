@@ -220,7 +220,7 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
     if (!folder) {
         throw docsUrl + " is not a valid Google Drive folder URL";
     }
-    let articles: FullArticle[] = [];
+    const articleMap: Record<string, FullArticle> = {};
     mkdir(output)
     mkdir(path.join(output, "articles"));
     mkdir(path.join(output, "images"));
@@ -229,10 +229,20 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
         q: `'${folder}' in parents and mimeType = 'application/vnd.google-apps.document'`,
         fields: "files(id, name)"
     })).files;
-    files && await Promise.all(files.map(async ({ id, name }): Promise<void> => {
-	console.log(`Processing "${name}"...`);
+    if (!files) {
+	throw "No docs in folder";
+    }
+    const articles: FullArticle[] = (await Promise.all(new Array<Promise<{ priority: string[] }>>(prompt([{
+        type: "order-list",
+        message: "Order parody articles by priority, most important first: ",
+        name: "priority",
+        choices: files.map(({ id, name }) => ({
+	    name,
+	    value: id
+        }))
+    }])).concat(files.map(async ({ id, name }): Promise<{ priority: string[] }> => {
 	if (!id || !name) {
-	    return;
+	    return { priority: [] };
 	}
         const document = unwrap(await docs.documents.get({
 	    documentId: id
@@ -251,25 +261,16 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
 	    }
         }
 	body = body.trim();
-        articles.push({
+	articleMap[id] = {
 	    title: name,
 	    subtitle: body.split("\n")[0],
 	    body: body,
 	    image: await save(path.join(output, "images"), safeName(name),
 			      Object.values(document.inlineObjects ?? {})[0]?.inlineObjectProperties?.embeddedObject?.imageProperties?.contentUri
                 || Object.values(document.positionedObjects ?? {})[0]?.positionedObjectProperties?.embeddedObject?.imageProperties?.contentUri)
-        });
-    }));
-    articles.sort((a: FullArticle, b: FullArticle): number => Number(Boolean(b.image)) - Number(Boolean(a.image)));
-    articles = (await prompt([{
-        type: "order-list",
-        message: "Order parody articles by priority, most important first: ",
-        name: "priority",
-        choices: articles.map((article: FullArticle) => ({
-            name: article.title,
-            value: article
-        }))
-    }])).priority;
+        };
+	return { priority: [] };
+    }))))[0].priority.map(id => articleMap[id]);
     const frontpage = await getPage(config.frontpage);
     config.default && frontpage("a").attr("href", config.default);
     config.frontpage.frontpage && frontpage(config.frontpage.frontpage).attr("href", "#");
@@ -297,9 +298,9 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
 	}
 	if (config.article.image) {
 	    if (article.image) {
-		articlePage(config.article.image).replaceWith(`<img src="../images/${article.image}" />`);
+		articlePage(config.article.image).add("#spoof-image").replaceWith(`<img id="spoof-image" src="../images/${article.image}" />`);
 	    } else {
-		articlePage(config.article.image).remove();
+		articlePage(config.article.image).add("#spoof-image").remove();
 	    }
 	}
 	if (config.article.author) {
@@ -313,7 +314,8 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
     }
 };
 if (require.main === module) {
+    const config: Configuration = YAML.parse(fs.readFileSync(process.argv[2], "utf8"));
     auth(JSON.parse(fs.readFileSync(process.argv[3], "utf8")) as SavedCredentials)
-        .then(oAuth2Client => spoof(YAML.parse(fs.readFileSync(process.argv[2], "utf8")) as Configuration, oAuth2Client, process.argv[4], process.argv[5]))
+        .then(oAuth2Client => spoof(config, oAuth2Client, process.argv[4], process.argv[5]))
         .catch(error => console.error(error));
 }

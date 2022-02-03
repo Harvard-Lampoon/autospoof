@@ -1,6 +1,5 @@
 frontpage:
   url: https://www.thecrimson.com/
-  frontpage:
   articles:
     .img-top, .img-left, .img-right, .img-undefined:
       title: h1 > a
@@ -17,19 +16,29 @@ frontpage:
 
     .wide-column {
       max-width: 100% !important;
+      border: none !important;
+      padding: 0px !important;
+    }
+
+    .preview-content > p {
+      overflow-wrap: anywhere;
     }
 article:
   url: https://www.thecrimson.com/article/2022/1/31/harvard-t-station-emergency/
-  frontpage:
-  remove: .css-1b9vs98, .css-8pot, .spinner
+  remove: .css-1b9vs98, .css-8pot, .spinner, .css-ujgn17 :not(:first-child)
   title: h1
   image: .css-8atqhb
-  body: .css-ujgn17
+  body: .css-ujgn17 > p:first-child
   links:
     .white-box-children a:
       .css-yu0l7n-Qs:
         title: p
         image: img
+  frontpage: .thc-link
+  style: |
+    #spoof-image {
+      width: 100%;
+    }
 suffix: " | News | Harvard Crimson"
 authors:
   - Johnny the Kid
