@@ -39,7 +39,11 @@ article:
     #spoof-image {
       width: 100%;
     }
-suffix: " | News | Harvard Crimson"
+
+    .css-ujgn17 > p:first-child {
+      white-space: pre-wrap !important;
+    }
+  suffix: " | News | Harvard Crimson"
 authors:
   - Johnny the Kid
   - David Racecar

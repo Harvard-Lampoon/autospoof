@@ -72,10 +72,10 @@ interface Configuration {
     };
     article: Page & FullArticle & {
         links: ArticleList;
+	suffix?: string;
     };
     default?: string;
     authors?: string[];
-    suffix?: string;
 }
 
 interface SavedCredentials {
@@ -309,7 +309,7 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
 		return true;
 	    });
 	}
-	articlePage("title").text(article.title + (config.suffix ?? ""));
+	articlePage("title").text(article.title + (config.article.suffix ?? ""));
 	fs.writeFileSync(path.join(output, "articles", safeName(article.title) + ".html"), articlePage.html());
     }
 };
