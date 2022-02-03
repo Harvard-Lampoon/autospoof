@@ -33,6 +33,7 @@ interface Page {
     frontpage?: string;
     script?: string;
     style?: string;
+    copy?: Record<string, number>;
 }
 
 interface Article {
@@ -120,12 +121,24 @@ const getAuthor = (authors: string[] | undefined, article: FullArticle, authorNu
 const getPage = async (page: Page): Promise<CheerioAPI> => {
     const $ = cheerio.load(unwrap(await request({
         url: page.url,
-        responseType: "text"
+        responseType: "text",
+	headers: {
+	    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+	    "Accept-Language": "en-US,en;q=0.5",
+	    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"
+	}
     })));
     $("script").remove();
     page.remove && $(page.remove).remove();
     page.script && $("body").append($(`<script>${page.script}</script>`));
     page.style && $("head").append($(`<style>${page.style}</style>`));
+    for (let [ selector, copies ] of Object.entries(page.copy ?? {})) {
+	$(selector).each((_, element) => {
+	    for (let i = 1; i < copies; i++) {
+		$(element).clone().insertAfter(element);
+	    }
+	});
+    }
     return $;
 };
 
@@ -137,38 +150,45 @@ const processArticles = ($: CheerioAPI,
 			 imagesFolder: string): CheerioAPI => {
     let i: number = 0;
     for (let [ selector, article ] of Object.entries(config)) {
-	i < articles.length && $(selector).each((i: number, element) => {
-            let title = $(element);
-            if (article.title) {
-		title = title.find(article.title);
-            }
-            title.text(articles[i].title);
-            let href = $(element);
-            if (article.href) {
-		href = href.find(article.href);
-            }
-            href.attr("href", articlesFolder + "/" + safeName(articles[i].title) + ".html");
-            if (article.image) {
-		const image = $(element).find(article.image);
-		if (articles[i].image) {
-                    image.replaceWith(`<img src="${imagesFolder}/${articles[i].image}" />`);
-		} else {
-                    image.remove();
-		}
-            }
-            if (article.subtitle) {
-		$(element).find(article.subtitle).text(articles[i].subtitle ?? "");
-            }
-	    if (article.author) {
-		$(element).find(article.author).each((j: number, element) => {
-		    $(element).text(getAuthor(authors, articles[i], j));
+	if (i < articles.length) {
+	    $(selector).each((i: number, element) => {
+		if (i >= articles.length) {
+		    $(element).remove();
 		    return true;
-		});
-	    }
-            i++;
-            return i < articles.length;
-	});
-	i < articles.length || $(selector).remove();
+		}
+		let title = $(element);
+		if (article.title) {
+		    title = title.find(article.title);
+		}
+		title.text(articles[i].title);
+		let href = $(element);
+		if (article.href) {
+		    href = href.find(article.href);
+		}
+		href.attr("href", articlesFolder + "/" + safeName(articles[i].title) + ".html");
+		if (article.image) {
+		    const image = $(element).find(article.image);
+		    if (articles[i].image) {
+			image.replaceWith(`<img src="${imagesFolder}/${articles[i].image}" />`);
+		    } else {
+			image.remove();
+		    }
+		}
+		if (article.subtitle) {
+		    $(element).find(article.subtitle).text(articles[i].subtitle ?? "");
+		}
+		if (article.author) {
+		    $(element).find(article.author).each((j: number, element) => {
+			$(element).text(getAuthor(authors, articles[i], j));
+			return true;
+		    });
+		}
+		i++;
+		return true;
+	    });
+	} else {
+	    $(selector).remove();
+	}
     }
     return $;
 };
@@ -283,7 +303,7 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
 				     "./images").html());
     let articlePage = await getPage(config.article);
     config.default && articlePage("a").attr("href", config.default);
-    config.article.frontpage && articlePage(config.article.frontpage).attr("href", "../");
+    config.article.frontpage && articlePage(config.article.frontpage).attr("href", "../index.html");
     articlePage = processArticles(articlePage,
 				  normalize(config.article.links),
 				  articles,
@@ -300,7 +320,7 @@ const spoof = async (config: Configuration, oAuth2Client: OAuth2Client, docsUrl:
 	    if (article.image) {
 		articlePage(config.article.image).add("#spoof-image").replaceWith(`<img id="spoof-image" src="../images/${article.image}" />`);
 	    } else {
-		articlePage(config.article.image).add("#spoof-image").remove();
+		articlePage(config.article.image).add("#spoof-image").replaceWith('<div id="spoof-image"></div>');
 	    }
 	}
 	if (config.article.author) {

@@ -8,7 +8,7 @@ frontpage:
       subtitle: .preview-content > p
       author: .contributor-container a
     .most-read-title:
-  remove: ".advertisement, .spinner, div.large-only, .css-1b9vs98, #primary > div.thin-column, #primary > div.wide"
+  remove: ".advertisement, .spinner, large-only, .midsize-only, .css-1b9vs98, #primary > div.thin-column, #primary > div.wide, .preview-image:not(:first-of-type), #bottom-section-mobile"
   style: |
     body {
       margin-top: -24px !important;
@@ -23,17 +23,30 @@ frontpage:
     .preview-content > p {
       overflow-wrap: anywhere;
     }
+
+    @media (max-width:576px) {
+      body {
+        margin-top: 0px !important;
+      }
+    }
+
+    #bottom-section-non-mobile {
+      display: block !important;
+    }
+  copy:
+    .css-6z47kd: 3
 article:
   url: https://www.thecrimson.com/article/2022/1/31/harvard-t-station-emergency/
-  remove: .css-1b9vs98, .css-8pot, .spinner, .css-ujgn17 :not(:first-child)
-  title: h1
+  remove: .advertisement, .spinner, .css-ujgn17 :not(:first-child), .css-1ijgbc7, .css-8pot
+  title: h1.css-894m66
   image: .css-8atqhb
   body: .css-ujgn17 > p:first-child
+  author: a.css-1fvj8jv
   links:
     .white-box-children a:
-      .css-yu0l7n-Qs:
-        title: p
-        image: img
+    .css-yu0l7n-Qs:
+      title: p
+      image: img
   frontpage: .thc-link
   style: |
     #spoof-image {
