@@ -1,4 +1,4 @@
-#+title: Lampy Autospoof
+#+title: Lampy /Autospoof/
 
 [[https://wi11dey.github.io/autospoof/nyt/Lampy_Horseback.png]]
 
