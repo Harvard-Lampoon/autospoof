@@ -1,6 +1,13 @@
 #+title: Lampy Autospoof
 
-For SSR and static sites (which together make like 90% of the web).
+[[https://wi11dey.github.io/autospoof/nyt/Lampy_Horseback.png]]
+
+Put in a Google Docs folder with pieces written by the Literature Board, and get out a fully formatted 
+website based off of an existing media publication you want to spoof. See [[https://github.com/Harvard-Lampoon/autospoof/blob/master/autospoof.ts][ ~autospoof.ts~ ]] for the magic.
+
+Examples:
+- https://thecrimsom.com
+- https://wi11dey.github.io/autospoof/nyt/
 
 * Setup
 #+begin_src shell
@@ -14,4 +21,4 @@ $ npx yarn build
 $ node autospoof.js <siteconfig.yaml> <client_secret.json> <docs> <output>
 #+end_src
 * Limitations
-- Can only handle up to 1000 parody articles (as if lit would ever write more than that)
+- Will only handle up to 1000 parody articles for Google Docs ratelimiting reasons (as if lit would ever write more than that)
